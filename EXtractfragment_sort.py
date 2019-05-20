@@ -8,12 +8,16 @@ def read_fasta(fasta_file):
     try:
         fp = open(fasta_file)
     except IOError:
+
         print ('cannot open '+fasta_file + ', check if it exist!')
+
         exit()
     else:
         fp = open(fasta_file)
         lines = fp.readlines()
+
         seq = ""
+
         fasta_dict = {} #record seq for one id
         positive_dict={} #record positive positions for one id
         idlist=[] #record id list sorted
@@ -28,8 +32,10 @@ def read_fasta(fasta_file):
             else:
                 seq += line.strip('\n')
 
+
         fasta_dict[gene_id] = seq #last seq need to be record
         idlist.append(gene_id)
+
 
         for gene_id in fasta_dict:
            seq=fasta_dict[gene_id];
@@ -69,8 +75,10 @@ def get_frag(fasta_dict,positive_dict,idlist,nb_windows, empty_aa,focus):
             #print(mid_aa)
             start = 0
             if pos-nb_windows>0:
+
                 start = pos-nb_windows
             left_seq = seq[start:pos]
+
 
             end = len(seq)
             if pos+nb_windows<end:
@@ -91,6 +99,7 @@ def get_frag(fasta_dict,positive_dict,idlist,nb_windows, empty_aa,focus):
 
             final_seq = left_seq + mid_aa + right_seq
 
+
             if(pos in positive_list):
                 final_seq_list = [1] + [ AA for AA in final_seq]
             else:
@@ -100,8 +109,6 @@ def get_frag(fasta_dict,positive_dict,idlist,nb_windows, empty_aa,focus):
             pos_list.append(pos)
             focus_list.append(str(mid_aa))
             seq_list_2d.append(final_seq_list)
-
-
 
     df = pd.DataFrame(seq_list_2d)
     df2= pd.DataFrame(id_list)
@@ -114,7 +121,9 @@ def get_frag(fasta_dict,positive_dict,idlist,nb_windows, empty_aa,focus):
 def extractFragforTraining(fasta_file,windows=16,empty_aa="-",focus=("S","T","Y")):
 
 
+
     fasta_dict,positive_dict,idlist = read_fasta(fasta_file) #{id} seq  fasta_file="train_test_fasta" fasta_file="./cross-validation-protein/validation_proteins_0.fasta"
+
 
 
     frag = get_frag(fasta_dict,positive_dict,idlist, windows, empty_aa,focus)[0]
@@ -125,6 +134,7 @@ def extractFragforPredict(fasta_file,windows=16,empty_aa="-",focus=("S","T","Y")
 
 
     fasta_dict,positive_dict,idlist = read_fasta(fasta_file) #{id} seq  fasta_file="train_test_fasta" fasta_file="./cross-validation-protein/validation_proteins_0.fasta"
+
 
 
     frag,ids,poses,focus = get_frag(fasta_dict,positive_dict,idlist, windows, empty_aa,focus)

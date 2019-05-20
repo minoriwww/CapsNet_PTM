@@ -1,5 +1,6 @@
 import sys
 import os
+
 os.environ["CUDA_VISIBLE_DEVICES"]="0";
 import tensorflow as tf
 config=tf.ConfigProto()
@@ -11,8 +12,9 @@ from Bootstrapping_capsnet import bootStrapping_allneg_continue_keras2
 from EXtractfragment_sort import extractFragforTraining
 
 
+
 def main():
-    
+
     parser=argparse.ArgumentParser()
     parser.add_argument('-input',  dest='inputfile', type=str, help='training data in fasta format. Sites followed by "#" are positive sites for a specific PTM prediction.', required=True)
     parser.add_argument('-output-prefix',  dest='outputprefix', type=str, help='prefix of the output files (model and parameter files).', required=True)
@@ -25,10 +27,12 @@ def main():
     parser.add_argument('-nb_epoch',  dest='nb_epoch', type=int, help='number of epoches for one bootstrap step. It is invalidate, if earlystop is set.', required=False, default=None)
     parser.add_argument('-earlystop',  dest='earlystop', type=int, help='after the \'earlystop\' number of epochs with no improvement the training will be stopped for one bootstrap step. [Default: 20]', required=False, default=20)
     parser.add_argument('-inputweights',  dest='inputweights', type=int, help='Initial weights saved in a HDF5 file.', required=False, default=None)
+
     parser.add_argument('-checkpointweights',  dest='checkpointweights', type=str, help='Set the intermediate weights of every checkpoints in HDF5 files.', required=False, default=None)
     parser.add_argument('-transferlayer',  dest='transferlayer', type=int, help='Set the last \'transferlayer\' number of layers to be randomly initialized.', required=False, default=1)
-    
-    
+
+
+
     args = parser.parse_args()
     inputfile=args.inputfile;
     valfile=args.valfile;
@@ -39,26 +43,27 @@ def main():
     np_epoch2=args.nb_epoch;
     earlystop=args.earlystop;
     inputweights=args.inputweights;
+
     checkpointweights=args.checkpointweights;
     transferlayer=args.transferlayer
     residues=args.residues.split(",")
-    
+
     #residues=("K")
     #inputfile = r'../CapsNet_PTM/all_PTM_raw_data' \
     #            r'/SUMOylation/metazoa_sequence_annotated_training_0.fasta'
     #if ! os.path.exists("ensemble_results"):
-    #     os.mkdir("ensemble_results")  
-    
+    #     os.mkdir("ensemble_results")
+
     #outputprefix = 'ensemble_results/model'
-    
-    
+
+
     outputmodel = outputprefix+str("_HDF5model")
     outputparameter = outputprefix+str("_parameters")
-    
+
     codemode=0 #coding method
     model='nogradientstop' #use this model
     nb_classes=2 # binary classification
-    
+
     try:
        output = open(outputparameter, 'w')
     except IOError:
@@ -66,14 +71,16 @@ def main():
        exit()
     else:
        output.write("%d\t%d\t%s\tgeneral\t%d\t%s\t%d" % (nclass,window,args.residues,codemode,model,nb_classes))
-    
-    
+
+
+
     trainfrag=extractFragforTraining(inputfile,window,'-',focus=residues)
     if(valfile is not None):
         valfrag=extractFragforTraining(valfile,window,'-',focus= residues)
     else:
+
         valfrag=None
-    
+
     for bt in range(nclass):
         checkpointoutput=checkpointweights+"_nclass"+str(bt)
         models=bootStrapping_allneg_continue_keras2(trainfrag.as_matrix(),valfile=valfrag,
@@ -90,10 +97,11 @@ def main():
         #                                            model=model,
         #                                            nb_epoch2=3)
         #
-        #models actually contains models,eval_model,manipulate_model,weight_c_model, and fitHistory 
+        #models actually contains models,eval_model,manipulate_model,weight_c_model, and fitHistory
         models[0].save_weights(outputmodel+'_class'+str(bt),overwrite=True)
     del models
 
 if __name__ == "__main__":
-    main()         
-   
+    main()
+
+

@@ -9,16 +9,16 @@ import keras.utils.np_utils as kutils
 def convertSampleToProbMatr(sampleSeq3DArr): #changed add one column for '1'
     """
     Convertd the raw data to probability matrix
-    
+
     PARAMETER
     ---------
     sampleSeq3DArr: 3D numpy array
        X denoted the unknow amino acid.
-    
-    
+
+
     probMatr: Probability Matrix for Samples. Shape (nb_samples, 1, nb_length_of_sequence, nb_AA)
     """
-    
+
     letterDict = {}
     letterDict["A"] = 0
     letterDict["C"] = 1
@@ -42,43 +42,43 @@ def convertSampleToProbMatr(sampleSeq3DArr): #changed add one column for '1'
     letterDict["Y"] = 19
     letterDict["-"] =20 ##add -
     AACategoryLen = 21 ##add -
-    
+
     probMatr = np.zeros((len(sampleSeq3DArr), 1, len(sampleSeq3DArr[0]), AACategoryLen))
-    
-    
+
+
     sampleNo = 0
     for sequence in sampleSeq3DArr:
-    
+
         AANo	 = 0
         for AA in sequence:
-            
+
             if not AA in letterDict:
                 probMatr[sampleNo][0][AANo] = np.full((1,AACategoryLen), 1.0/AACategoryLen)
-            
+
             else:
                 index = letterDict[AA]
                 probMatr[sampleNo][0][AANo][index] = 1
-                
+
             AANo += 1
         sampleNo += 1
-    
+
     return probMatr
-    
+
 
 
 def convertSampleToIndex(sampleSeq3DArr):
 	"""
 	Convertd the raw data to probability matrix
-	
+
 	PARAMETER
 	---------
 	sampleSeq3DArr: 3D numpy array
 		X denoted the unknow amino acid.
-	
-	
+
+
 	probMatr: Probability Matrix for Samples. Shape (nb_samples, 1, nb_length_of_sequence, nb_AA)
 	"""
-	
+
 	letterDict = {}
 	letterDict["A"] = 1
 	letterDict["C"] = 2
@@ -103,7 +103,7 @@ def convertSampleToIndex(sampleSeq3DArr):
 	letterDict["-"] = 21
 	letterDict["X"] = 0
 	probMatr = np.zeros((len(sampleSeq3DArr),len(sampleSeq3DArr[0])))
-	
+
 	sampleNo = 0
 	for sequence in sampleSeq3DArr:
 		AANo	 = 0
@@ -111,11 +111,11 @@ def convertSampleToIndex(sampleSeq3DArr):
 			probMatr[sampleNo][AANo]= letterDict[AA]
 			AANo += 1
 		sampleNo += 1
-	
-	return probMatr
-	
 
-	
+	return probMatr
+
+
+
 def convertSampleToVector2DList(sampleSeq3DArr, nb_windows, refMatrFileName):
 	"""
 	Convertd the raw data to probability matrix
@@ -125,38 +125,38 @@ def convertSampleToVector2DList(sampleSeq3DArr, nb_windows, refMatrFileName):
 		List -  numpy matrix(3D)
 	Sample List: List (nb_windows, nb_samples, SEQLen/nb_windows , 100)
 	"""
-	
+
 	rawDataFrame = pd.read_table(refMatrFileName, sep='\t', header=None)
-	
+
 	raw_data_seq_index_df = pd.DataFrame({'seq' : rawDataFrame[0] , 'indexing':rawDataFrame.index})
 	raw_data_seq_df_index_dict = raw_data_seq_index_df.set_index('seq')['indexing'].to_dict()
 
-	
+
 	nb_raw_data_frame_column = len(rawDataFrame.columns)
-	
+
 	nb_sample = sampleSeq3DArr.shape[0]
-	len_seq = len(sampleSeq3DArr[1]) 
+	len_seq = len(sampleSeq3DArr[1])
 	re_statement =  ".{%d}" % (nb_windows)
-	
-	
+
+
 	probMatr_list = []
 	for tmp_idx in range(nb_windows):
 		probMatr_list.append( np.zeros((nb_sample, int((len_seq - tmp_idx)/nb_windows) , 100)) )
 
-	
+
 	for sample_index, sample_sequence in enumerate(sampleSeq3DArr):
-		
+
 		if sample_index%10000 == 0:
 			print( "%d / %d " % (sample_index, nb_sample))
-		
+
 		#start_time = time.time()
 		seq = "".join(sample_sequence)
-		
+
 		for begin_idx in range(nb_windows):
-			
+
 			# Get sub-sequence
 			sub_seq_list = re.findall(re_statement, seq[begin_idx:])
-			
+
 			sub_seq_indexing_list = []
 			for sub_seq in sub_seq_list:
 				if sub_seq in raw_data_seq_df_index_dict:
@@ -170,23 +170,23 @@ def convertSampleToVector2DList(sampleSeq3DArr, nb_windows, refMatrFileName):
 					probMatr_list[begin_idx][sample_index][idx_i][idx_j] = matrix_arr[idx_i][idx_j]
 
 		#print("2. --- %s seconds ---" % (time.time() - start_time))
-		
+
 
 	return probMatr_list
 
-def convertSampleToPhysicsVector(sampleSeq3DArr): #from wulihuaxueshuxing.txt 
+def convertSampleToPhysicsVector(sampleSeq3DArr): #from wulihuaxueshuxing.txt
 	"""
 	Convertd the raw data to physico-chemical property
-	
+
 	PARAMETER
 	---------
 	sampleSeq3DArr: 3D numpy array
 		X denoted the unknow amino acid.
-	
-	
+
+
 	probMatr: Probability Matrix for Samples. Shape (nb_samples, 1, nb_length_of_sequence, nb_AA)
 	"""
-	
+
 	letterDict = {} #hydrophobicty, hydrophilicity, side-chain mass, pK1 (alpha-COOH), pK2 (NH3), PI, Average volume of buried residue, Molecular weight, Side chain volume, Mean polarity
 	letterDict["A"] = [0.62,	-0.5,	15,	2.35,	9.87,	6.11,	91.5,	89.09,	27.5,	-0.06]
 	letterDict["C"] = [0.2900,	-1.0000,	47.0000,    1.7100,   10.7800,    5.0200,	117.7,	121.15,	44.6,	1.36]
@@ -204,46 +204,46 @@ def convertSampleToPhysicsVector(sampleSeq3DArr): #from wulihuaxueshuxing.txt
 	letterDict["Q"] = [-0.8500,    0.2000,   72.0000,    2.1700,    9.1300,    5.6500,	161.1,	146.15,	80.7,	-0.73]
 	letterDict["R"] = [-2.5300,    3.0000,  101.0000,    2.1800,    9.0900,   10.7600,	202,	174.2,	105,	-0.84]
 	letterDict["S"] = [-0.1800,    0.3000,   31.0000,    2.2100,    9.1500,    5.6800,	99.1,	105.09,	29.3,	-0.5]
-	letterDict["T"] = [-0.0500,   -0.4000,   45.0000,    2.1500,    9.1200,    5.6000,	122.1,	119.12,	51.3,	-0.27]	
+	letterDict["T"] = [-0.0500,   -0.4000,   45.0000,    2.1500,    9.1200,    5.6000,	122.1,	119.12,	51.3,	-0.27]
 	letterDict["V"] = [1.0800,   -1.5000,   43.0000,    2.2900,    9.7400,    6.0200,	141.7,	117.15,	71.5,	1.09]
 	letterDict["W"] = [0.8100,   -3.4000,  130.0000,    2.3800,    9.3900,    5.8800,	237.6,	204.24,	145.5,	0.88]
 	letterDict["Y"] = [0.2600,   -2.3000,  107.0000,    2.2000,    9.1100,    5.6300,	203.6,	181.19,	117.3,	0.33]
 	AACategoryLen = 10
-	
+
 	probMatr = np.zeros((len(sampleSeq3DArr), 1, len(sampleSeq3DArr[0]), AACategoryLen))
-	
-	
+
+
 	sampleNo = 0
 	for sequence in sampleSeq3DArr:
-	
+
 		AANo	 = 0
 		for AA in sequence:
-			
+
 			if not AA in letterDict:
 				probMatr[sampleNo][0][AANo] = np.full((1,AACategoryLen), 0)
-			
+
 			else:
 				probMatr[sampleNo][0][AANo]= letterDict[AA]
-				
+
 			AANo += 1
 		sampleNo += 1
-	
+
 	return probMatr
 
 def convertSampleToPhysicsVector_3(sampleSeq3DArr):
 	"""
 	Convertd the raw data to physico-chemical property
-	
+
 	PARAMETER
 	---------
 	sampleSeq3DArr: 3D numpy array
 		X denoted the unknow amino acid.
-	
-	
+
+
 	probMatr: Probability Matrix for Samples. Shape (nb_samples, 1, nb_length_of_sequence, nb_AA)
 	"""
-	
-	letterDict = {} 
+
+	letterDict = {}
 	letterDict["A"] = [0.8056266,0.453125,0.1085271,0.73563218,0.51595745,0.40231362,0.1466121,0.1085391,0.1890034,0.4409449,0]
 	letterDict["C"] = [0.7212276,0.375000,0.3565891,0.00000000,1.00000000,0.26221080,0.2996495,0.3567392,0.3065292,1.0000000,0]
 	letterDict["D"] = [0.4168798,1.000000,0.4496124,0.19540230,0.37234043,0.00000000,0.3393692,0.4492529,0.2749141,0.1496063,0]
@@ -267,25 +267,25 @@ def convertSampleToPhysicsVector_3(sampleSeq3DArr):
 	letterDict["X"] = [0,0,0,0,0,0,0,0,0,0,0]
 	letterDict["-"] = [0,0,0,0,0,0,0,0,0,0,1]
 	AACategoryLen = 11
-	
+
 	probMatr = np.zeros((len(sampleSeq3DArr), 1, len(sampleSeq3DArr[0]), AACategoryLen))
-	
-	
+
+
 	sampleNo = 0
 	for sequence in sampleSeq3DArr:
-	
+
 		AANo	 = 0
 		for AA in sequence:
-			
+
 			if not AA in letterDict:
 				probMatr[sampleNo][0][AANo] = np.full((1,AACategoryLen), 0)
-			
+
 			else:
 				probMatr[sampleNo][0][AANo]= letterDict[AA]
-				
+
 			AANo += 1
 		sampleNo += 1
-	
+
 	return probMatr
 
 def convertSampleToAAindexforUbiVector(sampleSeq3DArr):
@@ -314,39 +314,39 @@ def convertSampleToAAindexforUbiVector(sampleSeq3DArr):
     letterDict["-"] = [0,0,0,0,0,0,0,0,0,0,0,0,0,1]
     AACategoryLen = 14
     probMatr = np.zeros((len(sampleSeq3DArr), 1, len(sampleSeq3DArr[0]), AACategoryLen))
-    
-    
+
+
     sampleNo = 0
     for sequence in sampleSeq3DArr:
-    
+
     	AANo	 = 0
     	for AA in sequence:
-    		
+
     		if not AA in letterDict:
     			probMatr[sampleNo][0][AANo] = np.full((1,AACategoryLen), 0)
-    		
+
     		else:
     			probMatr[sampleNo][0][AANo]= letterDict[AA]
-    			
+
     		AANo += 1
     	sampleNo += 1
-    
+
     return probMatr
 
 def convertSampleToPhysicsVector_pca(sampleSeq3DArr):
 	"""
 	Convertd the raw data to physico-chemical property
-	
+
 	PARAMETER
 	---------
 	sampleSeq3DArr: 3D numpy array
 		X denoted the unknow amino acid.
-	
-	
+
+
 	probMatr: Probability Matrix for Samples. Shape (nb_samples, 1, nb_length_of_sequence, nb_AA)
 	"""
-	
-	letterDict = {} 
+
+	letterDict = {}
 	letterDict["A"] = [0.008,0.134,-0.475,-0.039,0.181,0]
 	letterDict["R"] = [0.171,-0.361,0.107,-0.258,-0.364,0]
 	letterDict["N"] = [0.255,0.038,0.117,0.118,-0.055,0]
@@ -370,41 +370,41 @@ def convertSampleToPhysicsVector_pca(sampleSeq3DArr):
 	letterDict["X"] = [0,0,0,0,0,0]
 	letterDict["-"] = [0,0,0,0,0,1]
 	AACategoryLen = 6
-	
+
 	probMatr = np.zeros((len(sampleSeq3DArr), 1, len(sampleSeq3DArr[0]), AACategoryLen))
-	
-	
+
+
 	sampleNo = 0
 	for sequence in sampleSeq3DArr:
-	
+
 		AANo	 = 0
 		for AA in sequence:
-			
+
 			if not AA in letterDict:
 				probMatr[sampleNo][0][AANo] = np.full((1,AACategoryLen), 0)
-			
+
 			else:
 				probMatr[sampleNo][0][AANo]= letterDict[AA]
-				
+
 			AANo += 1
 		sampleNo += 1
-	
+
 	return probMatr
 
 def convertSampleToPhysicsVector_2(sampleSeq3DArr):
 	"""
 	Convertd the raw data to physico-chemical property
-	
+
 	PARAMETER
 	---------
 	sampleSeq3DArr: 3D numpy array
 		X denoted the unknow amino acid.
-	
-	
+
+
 	probMatr: Probability Matrix for Samples. Shape (nb_samples, 1, nb_length_of_sequence, nb_AA)
 	"""
-	
-	letterDict = {} 
+
+	letterDict = {}
 	letterDict["A"] = [-0.591, -1.302, -0.733, 1.570,-0.146]
 	letterDict["C"] = [ -1.343, 0.465, -0.862, -1.020, -0.255]
 	letterDict["D"] = [1.050, 0.302, -3.656, -0.259, -3.242]
@@ -421,30 +421,30 @@ def convertSampleToPhysicsVector_2(sampleSeq3DArr):
 	letterDict["Q"] = [0.931, -0.179, -3.005, -0.503, -1.853]
 	letterDict["R"] = [1.538, -0.055, 1.502, 0.440, 2.897]
 	letterDict["S"] = [-0.228, 1.399, -4.760, 0.670, -2.647]
-	letterDict["T"] = [-0.032, 0.326, 2.213, 0.908, 1.313]	
+	letterDict["T"] = [-0.032, 0.326, 2.213, 0.908, 1.313]
 	letterDict["V"] = [-1.337, -0.279, -0.544, 1.242, -1.262]
 	letterDict["W"] = [-0.595, 0.009, 0.672, -2.128, -0.184]
 	letterDict["Y"] = [0.260, 0.830, 3.097, -0.838, 1.512]
 	AACategoryLen = 5
-	
+
 	probMatr = np.zeros((len(sampleSeq3DArr), 1, len(sampleSeq3DArr[0]), AACategoryLen))
-	
-	
+
+
 	sampleNo = 0
 	for sequence in sampleSeq3DArr:
-	
+
 		AANo	 = 0
 		for AA in sequence:
-			
+
 			if not AA in letterDict:
 				probMatr[sampleNo][0][AANo] = np.full((1,AACategoryLen), 0)
-			
+
 			else:
 				probMatr[sampleNo][0][AANo]= letterDict[AA]
-				
+
 			AANo += 1
 		sampleNo += 1
-	
+
 	return probMatr
 
 #def convertSampleToVector2DList(sampleSeq3DArr, nb_windows, refMatrFileName):
@@ -461,17 +461,17 @@ def convertSampleToPhysicsVector_2(sampleSeq3DArr):
 #	raw_data_seq_df_index_dict = raw_data_seq_index_df.set_index('seq')['indexing'].to_dict()
 #	nb_raw_data_frame_column = len(rawDataFrame.columns)
 #	nb_sample = sampleSeq3DArr.shape[0]
-#	len_seq = len(sampleSeq3DArr[1]) 
-#	
-#	
+#	len_seq = len(sampleSeq3DArr[1])
+#
+#
 #	probMatr_list = []
 #	for tmp_idx in range(nb_windows):
 #		probMatr_list.append( np.zeros((nb_sample, int((len_seq - tmp_idx)/nb_windows) , 100)) )
 #	for sample_index, sample_sequence in enumerate(sampleSeq3DArr):
-#		
+#
 #		if sample_index%10000 == 0:
 #			print( "%d / %d " % (sample_index, nb_sample))
-#		
+#
 #		#start_time = time.time()
 #		for begin_idx in range(nb_windows):
 #			seq_len=int((len_seq - begin_idx)/nb_windows)
@@ -479,7 +479,7 @@ def convertSampleToPhysicsVector_2(sampleSeq3DArr):
 #			for tmp_idx in range(seq_len):
 #				sub_seq="".join(sample_sequence[(begin_idx+nb_windows*tmp_idx):(begin_idx+nb_windows*tmp_idx+nb_windows)])
 #				if sub_seq in raw_data_seq_df_index_dict:
-#					sub_seq_index=raw_data_seq_df_index_dict[sub_seq] 
+#					sub_seq_index=raw_data_seq_df_index_dict[sub_seq]
 #				else:
 #					sub_seq_index=raw_data_seq_df_index_dict['<unk>']
 #				probMatr_list[begin_idx][sample_index][tmp_idx]=rawDataFrame.loc[sub_seq_index][ range(1, nb_raw_data_frame_column)]
@@ -489,15 +489,15 @@ def convertSampleToPhysicsVector_2(sampleSeq3DArr):
 def convertSampleToAAindexClusterH(sampleSeq3DArr):
     '''
     Convertd the raw data to physico-chemical property(based on AAindex Cluster H)
-    
+
     PARAMETER
     ---------
     sampleSeq3DArr: 3D numpy array
     	X denoted the unknow amino acid.
-    
+
     probMatr: Probability Matrix for Samples. Shape (nb_samples, 1, nb_length_of_sequence, nb_AA)
     '''
-    
+
     letterDict = {} # Total 149*20
     letterDict["A"] = [0.61,	1.81,	6.8,	0.77,	0.357,	1.18,	1.56,	16,	44,	-0.2,	7.3,	3.9,	-0.45,	-0.08,	0.36,	0.17,	0.02,	25,	0.38,	0.2,	1.56,	1.26,	0.25,	0,	2.34,	0.31,	0,	-0.01,	0,	0,	0,	297,	0,	1,	1.2,	1,	0.67,	0,	1.34,	0.87,	1.041,	0,	0.934,	-0.18,	-0.01,	-0.06,	-0.19,	-0.19,	8,	-0.05,	4.55,	-0.48,	0.1,	0.75,	4.6,	27.5,	0.946,	1.29,	0.83,	8.5,	0.73,	-0.4,	14.53,	-0.06,	0,	87,	10.67,	14.6,	7.62,	12.28,	2.63,	0.23,	12.97,	-0.5,	4.32,	6.61,	8.63,	5.15,	0.5,	2.1,	-2.89,	2.36,	6.05,	0.52,	0.74,	1.94,	-0.67,	-0.5,	1.1,	1,	-0.1,	0.5,	6.5,	-0.67,	0.159,	0.507,	1.4,	1.2,	1,	1.29,	3.7,	0.82,	-0.491,	-0.22,	8.1,	0.93,	9.9,	0.99,	17.05,	1.3,	0.52,	7,	0.94,	1,	0,	6.7,	6,	0.33,	1.6,	1.16,	0.46,	9.9,	0.305,	9.36,	49.1,	2.34,	0.3,	27.8,	51,	15,	1.7,	0.328,	0.15,	0.09,	-12.04,	0.937,	0.03731,	-0.29,	1.29,	1.42,	10.04,	18.08,	18.56,	-0.07,	0.4,	13.65,	-1.895,	1.8,	0]
     letterDict["R"] = [0.6,	-14.92,	0,	0.72,	0.529,	0.2,	0.45,	-70,	-68,	-0.12,	-3.6,	3.2,	-0.24,	-0.09,	-0.52,	-0.7,	-0.42,	90,	0.01,	0,	0.59,	0.38,	-1.76,	-0.96,	1.82,	-1.01,	10,	0.04,	4,	3,	1,	238,	0,	0.7,	1.7,	1.7,	-2.1,	1,	2.78,	0.85,	1.038,	0.65,	0.962,	-0.13,	0.02,	0.02,	0.17,	0.03,	0.1,	0.06,	5.97,	-0.06,	1.91,	0.75,	6.5,	105,	1.028,	0.44,	0.83,	0,	0.73,	-0.59,	17.82,	-0.84,	0,	81,	11.05,	13.24,	6.81,	11.49,	2.45,	-0.26,	11.72,	3,	6.55,	0.41,	6.75,	4.38,	0,	4.2,	-3.3,	1.92,	5.7,	-1.32,	0.64,	-19.92,	3.89,	3,	-0.4,	-2,	-4.5,	0.8,	-0.9,	12.1,	0.194,	0.459,	1.2,	0.7,	0.4,	0.96,	2.53,	0.99,	-0.554,	-0.93,	10.5,	0.98,	4.6,	1.19,	21.25,	0.8,	0.49,	9.1,	1.09,	2.3,	1,	0.3,	10.76,	-0.176,	0.9,	1.72,	-1.54,	0.09,	0.227,	0.27,	133,	1.18,	-1.4,	94.7,	5,	67,	0.1,	2.088,	-0.37,	-3.44,	39.23,	1.725,	0.09593,	-2.71,	-13.6,	-18.6,	6.18,	0,	0,	-0.4,	0.3,	11.28,	-1.475,	-4.5,	52]
@@ -523,40 +523,40 @@ def convertSampleToAAindexClusterH(sampleSeq3DArr):
     encodeX = np.zeros(AACategoryLen)
     for k in letterDict.keys():
         encodeX+=np.asarray(letterDict[k])
-    
+
     encodeX = encodeX/20.0
     letterDict["X"] = list(encodeX)
     letterDict["-"] = list(np.zeros(AACategoryLen))
     probMatr = np.zeros((len(sampleSeq3DArr), 1, len(sampleSeq3DArr[0]), AACategoryLen))
-    
+
     sampleNo = 0
     for sequence in sampleSeq3DArr:
-        
+
         AANo	 = 0
         for AA in sequence:
-            
+
             if not AA in letterDict:
                 #probMatr[sampleNo][0][AANo] = np.full((1,AACategoryLen), 0)
                 continue
-            
+
             else:
                 probMatr[sampleNo][0][AANo]= letterDict[AA]
-            
+
             AANo += 1
-        
+
         sampleNo += 1
-    
+
     return probMatr
 
 def convertSampleToAAindexClusterP(sampleSeq3DArr):
     '''
     Convertd the raw data to physico-chemical property(based on AAindex Cluster P)
-    
+
     PARAMETER
     ---------
     sampleSeq3DArr: 3D numpy array
     	X denoted the unknow amino acid.
-    
+
     probMatr: Probability Matrix for Samples. Shape (nb_samples, 1, nb_length_of_sequence, nb_AA)
     '''
     letterDict = {} # Total 46*20
@@ -584,43 +584,43 @@ def convertSampleToAAindexClusterP(sampleSeq3DArr):
     encodeX = np.zeros(AACategoryLen)
     for k in letterDict.keys():
         encodeX+=np.asarray(letterDict[k])
-    
+
     encodeX = encodeX/20.0
     letterDict["X"] = list(encodeX)
     letterDict["-"] = list(np.zeros(AACategoryLen))
     probMatr = np.zeros((len(sampleSeq3DArr), 1, len(sampleSeq3DArr[0]), AACategoryLen))
-    
+
     sampleNo = 0
     for sequence in sampleSeq3DArr:
-        
+
         AANo = 0
         for AA in sequence:
-            
+
             if not AA in letterDict:
                 #probMatr[sampleNo][0][AANo] = np.full((1,AACategoryLen), 0)
                 continue
-            
+
             else:
                 probMatr[sampleNo][0][AANo] = letterDict[AA]
-            
+
             AANo += 1
-        
+
         sampleNo += 1
-    
+
     return probMatr
 
 def convertSampleToAAindexClusterO(sampleSeq3DArr):
     '''
     Convertd the raw data to physico-chemical property(based on AAindex Cluster O)
-    
+
     PARAMETER
     ---------
     sampleSeq3DArr: 3D numpy array
     	X denoted the unknow amino acid.
-    
+
     probMatr: Probability Matrix for Samples. Shape (nb_samples, 1, nb_length_of_sequence, nb_AA)
     '''
-    
+
     letterDict = {} # Total 28*20
     letterDict["A"] = [0.78,	0.497,	0.941,	0.035,	0.35,	0.7,	0.5,	0.16,	0.7,	0.7,	0.3,	0.82,	0.64,	0.47,	0.17,	1.13,	0.289,	0.945,	1.02,	0.8,	7.3,	121.9,	243.2,	0.9,	0.78,	-0.118,	0.52,	0.53]
     letterDict["R"] = [1.75,	0.677,	1.112,	0.099,	0.75,	0.34,	0.4,	-0.2,	0.4,	0.4,	0.9,	2.6,	0.62,	0.52,	0.76,	0.48,	1.38,	0.364,	1,	0.9,	11.1,	121.4,	206.6,	0.99,	0.88,	0.124,	0.68,	0.69]
@@ -646,45 +646,45 @@ def convertSampleToAAindexClusterO(sampleSeq3DArr):
     encodeX = np.zeros(AACategoryLen)
     for k in letterDict.keys():
         encodeX+=np.asarray(letterDict[k])
-    
+
     encodeX = encodeX/20.0
     letterDict["X"] = list(encodeX)
     letterDict["-"] = list(np.zeros(AACategoryLen))
-    
+
     probMatr = np.zeros((len(sampleSeq3DArr), 1, len(sampleSeq3DArr[0]), AACategoryLen))
-    
+
     sampleNo = 0
     for sequence in sampleSeq3DArr:
-        
+
         AANo = 0
         for AA in sequence:
-            
+
             if not AA in letterDict:
                 # probMatr[sampleNo][0][AANo] = np.full((1,AACategoryLen), 0)
                 continue
-            
+
             else:
                 probMatr[sampleNo][0][AANo] = letterDict[AA]
-            
+
             AANo += 1
-        
+
         sampleNo += 1
-    
+
     return probMatr
 
 
 def convertSampleToAAindexClusterC(sampleSeq3DArr):
     '''
     Convertd the raw data to physico-chemical property(based on AAindex Cluster C)
-    
+
     PARAMETER
     ---------
     sampleSeq3DArr: 3D numpy array
     	X denoted the unknow amino acid.
-    
+
     probMatr: Probability Matrix for Samples. Shape (nb_samples, 1, nb_length_of_sequence, nb_AA)
     '''
-    
+
     letterDict = {} # Total 24*20
     letterDict["A"] = [-0.7,	5.88,	6.69,	5.08,	10.88,	1.61,	10.17,	5.04,	0.077,	9.25,	7.99,	3.73,	-0.57,	8.6,	685,	5.3,	5.39,	-0.6,	5.74,	0,	29.22,	0.892,	0.34,	1.58]
     letterDict["R"] = [-0.91,	1.54,	6.65,	4.75,	6.01,	0.4,	1.21,	3.73,	0.051,	3.96,	5.86,	3.34,	-1.29,	4.9,	382,	2.6,	2.81,	-1.18,	1.92,	5,	26.37,	0.901,	-0.57,	1.14]
@@ -710,44 +710,44 @@ def convertSampleToAAindexClusterC(sampleSeq3DArr):
     encodeX = np.zeros(AACategoryLen)
     for k in letterDict.keys():
         encodeX+=np.asarray(letterDict[k])
-    
+
     encodeX = encodeX/20.0
     letterDict["X"] = list(encodeX)
     letterDict["-"] = list(np.zeros(AACategoryLen))
-    
+
     probMatr = np.zeros((len(sampleSeq3DArr), 1, len(sampleSeq3DArr[0]), AACategoryLen))
-    
+
     sampleNo = 0
     for sequence in sampleSeq3DArr:
-        
+
         AANo = 0
         for AA in sequence:
-            
+
             if not AA in letterDict:
                 # probMatr[sampleNo][0][AANo] = np.full((1,AACategoryLen), 0)
                 continue
-            
+
             else:
                 probMatr[sampleNo][0][AANo] = letterDict[AA]
-            
+
             AANo += 1
-        
+
         sampleNo += 1
-    
+
     return probMatr
 
 def convertSampleToAAindexClusterB(sampleSeq3DArr):
     '''
     Convertd the raw data to physico-chemical property(based on AAindex Cluster C)
-    
+
     PARAMETER
     ---------
     sampleSeq3DArr: 3D numpy array
     	X denoted the unknow amino acid.
-    
+
     probMatr: Probability Matrix for Samples. Shape (nb_samples, 1, nb_length_of_sequence, nb_AA)
     '''
-    
+
     letterDict = {} # Total 37*20
     letterDict["A"] = [-2.49,	2.01,	-0.1,	0.05,	1,	0.89,	-0.26,	-0.25,	1,	0.92,	0.9,	0.83,	0.86,	1.1,	0.9,	0.75,	-0.31,	0.75,	0.81,	0.86,	0.81,	0.84,	1,	0,	-2.7,	0.91,	0.98,	0.687,	0.9,	0.96,	0.86,	0.288,	0.79,	0.86,	0.86,	1.48,	0]
     letterDict["R"] = [2.55,	0.84,	0.19,	-0.11,	0.68,	1.06,	-0.09,	-0.02,	0.7,	0.93,	1.02,	0.93,	1.15,	0.93,	0.75,	0.9,	0.25,	0.79,	0.85,	0.97,	1.03,	1.04,	0.74,	1.1,	0.4,	0.99,	1.03,	0.59,	0.99,	0.67,	0.9,	0.362,	1.087,	0.98,	0.94,	1.02,	1]
@@ -773,44 +773,44 @@ def convertSampleToAAindexClusterB(sampleSeq3DArr):
     encodeX = np.zeros(AACategoryLen)
     for k in letterDict.keys():
         encodeX+=np.asarray(letterDict[k])
-    
+
     encodeX = encodeX/20.0
     letterDict["X"] = list(encodeX)
     letterDict["-"] = list(np.zeros(AACategoryLen))
-    
+
     probMatr = np.zeros((len(sampleSeq3DArr), 1, len(sampleSeq3DArr[0]), AACategoryLen))
-    
+
     sampleNo = 0
     for sequence in sampleSeq3DArr:
-        
+
         AANo = 0
         for AA in sequence:
-            
+
             if not AA in letterDict:
                 # probMatr[sampleNo][0][AANo] = np.full((1,AACategoryLen), 0)
                 continue
-            
+
             else:
                 probMatr[sampleNo][0][AANo] = letterDict[AA]
-            
+
             AANo += 1
-        
+
         sampleNo += 1
-    
+
     return probMatr
 
 def convertSampleToAAindexClusterA(sampleSeq3DArr):
     '''
     Convertd the raw data to physico-chemical property(based on AAindex Cluster C)
-    
+
     PARAMETER
     ---------
     sampleSeq3DArr: 3D numpy array
     	X denoted the unknow amino acid.
-    
+
     probMatr: Probability Matrix for Samples. Shape (nb_samples, 1, nb_length_of_sequence, nb_AA)
     '''
-    
+
     letterDict = {} # Total 118*20
     letterDict["A"] = [-0.062,	0.12,	-1.73,	0.06,	1.1,	-5,	0.7,	1.08,	1.071,	-0.19,	-2.5,	0.058,	-0.25,	-4.7,	-5.1,	0.91,	0.74,	0.22,	0.239,	1.8,	4.76,	0.93,	1,	0.87,	0.92,	0.135,	0.69,	0.52,	1,	1.09,	0.7,	0.946,	1,	0.85,	0.26,	0.29,	0.08,	1.8,	0.64,	0.68,	-0.43,	1.34,	-0.14,	0.72,	1.8,	-0.368,	1.55,	6.5,	1.2,	9.69,	0.4,	0,	1.4,	1.1,	-2.3,	0.18,	-0.08,	-0.3,	-0.23,	0.37,	0.66,	0.67,	0.93,	-3.3,	0.046,	0.64,	-3.7,	0.6,	-1,	0.65,	0.842,	0.74,	0.91,	-6.7,	0.77,	0.79,	-0.42,	-0.24,	1.1,	2.3,	0.33,	0.13,	0.31,	0.21,	0.01,	-0.27,	-0.14,	0.84,	0.78,	1.13,	0.8,	1.08,	8.249,	1,	0.076,	1.09,	1.194,	0.57,	1.45,	1.53,	1.36,	1.32,	1.3,	1.29,	1.33,	1.29,	1.19,	1.15,	1.43,	0.486,	1.32,	1.42,	2.3,	0.34,	1.42,	0.88,	1.29,	0.175]
     letterDict["R"] = [-0.167,	0.04,	2.52,	0.07,	1.5,	2.1,	0.8,	1.05,	1.033,	-0.07,	-1.2,	0.085,	0.12,	2,	2.6,	0.77,	1.05,	0.28,	0.211,	12.5,	4.3,	1.52,	1.4,	1.3,	0.9,	0.296,	0,	1.24,	1.18,	1.07,	1.1,	1.128,	0.52,	2.02,	-0.14,	-0.03,	-0.01,	1.3,	-0.1,	-0.22,	0.06,	0.91,	0.14,	1.33,	1,	-1.03,	0.2,	6.9,	1.25,	8.99,	1.2,	0,	2.1,	1,	0.4,	0.21,	0.05,	-0.09,	-0.2,	0.84,	0.95,	0.89,	1.01,	0,	0.291,	1.05,	1,	0.79,	0.3,	0.93,	0.936,	1.01,	1,	51.5,	0.88,	0.9,	-0.23,	-0.04,	0.95,	1.4,	0.1,	0.08,	0.18,	0.07,	-0.13,	-0.4,	0.21,	0.91,	1.06,	1.09,	0.96,	0.93,	8.274,	0.7,	0.106,	0.97,	0.795,	0.23,	1.15,	1.17,	1,	0.98,	0.93,	0.83,	0.79,	1,	1,	1.06,	1.18,	0.262,	1.04,	0.98,	-5.2,	0.22,	1.06,	0.99,	0.96,	0.083]
@@ -836,31 +836,32 @@ def convertSampleToAAindexClusterA(sampleSeq3DArr):
     encodeX = np.zeros(AACategoryLen)
     for k in letterDict.keys():
         encodeX+=np.asarray(letterDict[k])
-    
+
     encodeX = encodeX/20.0
     letterDict["X"] = list(encodeX)
     letterDict["-"] = list(np.zeros(AACategoryLen))
-    
+
     probMatr = np.zeros((len(sampleSeq3DArr), 1, len(sampleSeq3DArr[0]), AACategoryLen))
-    
+
     sampleNo = 0
     for sequence in sampleSeq3DArr:
-        
+
         AANo = 0
         for AA in sequence:
-            
+
             if not AA in letterDict:
                 # probMatr[sampleNo][0][AANo] = np.full((1,AACategoryLen), 0)
                 continue
-            
+
             else:
                 probMatr[sampleNo][0][AANo] = letterDict[AA]
-            
+
             AANo += 1
-        
+
         sampleNo += 1
-    
+
     return probMatr
+
 
 def convertSampleToDoubleVec(sampleSeq3DArr, nb_neibor):
     letterDict = {}
@@ -884,32 +885,32 @@ def convertSampleToDoubleVec(sampleSeq3DArr, nb_neibor):
     letterDict["V"] = 17
     letterDict["W"] = 18
     letterDict["Y"] = 19
-    
-    
+
+
     double_letter_dict = {}
     for key_row in letterDict:
         for key_col in letterDict:
             idx_row = letterDict[key_row]
             idx_col = letterDict[key_col]
-            
+
             final_key = key_row    + key_col
             final_idx = idx_row*20 + idx_col
-            
+
             double_letter_dict[final_key] = final_idx
-    
-    
+
+
     probMatr = np.zeros((len(sampleSeq3DArr), 1, len(sampleSeq3DArr[0])-nb_neibor, len(double_letter_dict)))
-    
-    
+
+
     sampleNo = 0
     for sequence in sampleSeq3DArr:
-    
+
         nb_sub_AA   = 0
         sequence = sequence.tolist()
         for idx in range(len(sequence)-nb_neibor):
-            
+
             sub_AA = ("").join( sequence[idx:idx+nb_neibor+1] )
-            
+
             if sub_AA in double_letter_dict:
                 index = double_letter_dict[sub_AA]
                 probMatr[sampleNo][0][nb_sub_AA][index] = 1
@@ -918,28 +919,30 @@ def convertSampleToDoubleVec(sampleSeq3DArr, nb_neibor):
             nb_sub_AA += 1
         break
         sampleNo += 1
-    
-    
+
+
+
     return probMatr
+
 
 def convertRawToXY(rawDataFrame, refMatrFileName="", nb_windows=3, codingMode=0):#rawDataFrame is numpy.ndarray
     """
-    convertd the raw data to probability matrix and target array 
-    
-    
+    convertd the raw data to probability matrix and target array
+
+
     #Output:
     probMatr: Probability Matrix for Samples. Shape (nb_samples, 1, nb_length_of_sequence, nb_AA)
     targetArr: Target. Shape (nb_samples)
     """
-    
-    
+
+
     #rawDataFrame = pd.read_table(fileName, sep='\t', header=None).values
-    
+
     targetList = rawDataFrame[:, 0]
     targetArr = kutils.to_categorical(targetList)
-    
+
     sampleSeq3DArr = rawDataFrame[:, 1:]
-    
+
     if codingMode == 0:
         probMatr = convertSampleToProbMatr(sampleSeq3DArr)
     elif codingMode == 1:
@@ -956,6 +959,7 @@ def convertRawToXY(rawDataFrame, refMatrFileName="", nb_windows=3, codingMode=0)
         probMatr = convertSampleToPhysicsVector_pca(sampleSeq3DArr)
     elif codingMode==43:
         probMatr = convertSampleToAAindexforUbiVector(sampleSeq3DArr)
+
     elif codingMode == 9:
         probMatr = convertSampleToAAindexClusterO(sampleSeq3DArr)
     elif codingMode == 10:
@@ -968,44 +972,45 @@ def convertRawToXY(rawDataFrame, refMatrFileName="", nb_windows=3, codingMode=0)
         probMatr = convertSampleToAAindexClusterB(sampleSeq3DArr)
     elif codingMode == 14:
         probMatr = convertSampleToAAindexClusterA(sampleSeq3DArr)
-    
+
     return probMatr, targetArr
-    
+
+
 
 
 def convertRawToIndex(rawDataFrame):
 	#rawDataFrame = pd.read_table(fileName, sep='\t', header=None).values
-	
+
 	targetList = rawDataFrame[:, 0]
 	targetArr = kutils.to_categorical(targetList)
-	
+
 	sampleSeq3DArr = rawDataFrame[:, 1:]
-	
+
 	index = convertSampleToIndex(sampleSeq3DArr)
-	
-	
+
+
 	return index, targetArr
-	
+
 
 
 def convertRawToX(fileName, refMatrFileName="", nb_windows=3, codingMode=0):
 	"""
 	convertd the raw data to probability matrix
-	
-	
+
+
 	#Output:
 	probMatr: Probability Matrix for Samples. Shape (nb_samples, 1, nb_length_of_sequence, nb_AA)
 	"""
-	
-	
+
+
 	rawDataFrame = pd.read_table(fileName, sep='\t', header=None).values
-	
+
 	sampleSeq3DArr = rawDataFrame[:, 0:]
-	
+
 	if codingMode == 0:
 		probMatr = convertSampleToProbMatr(sampleSeq3DArr)
 	elif codingMode == 1:
 		probMatr = DProcess.convertSampleToVector2DList(sampleSeq3DArr, nb_windows, refMatrFileName)
-	
-	
+
+
 	return probMatr
