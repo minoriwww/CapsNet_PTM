@@ -51,13 +51,15 @@ def bootStrapping_allneg_continue_keras2(trainfile,valfile=None,srate=0.8,nb_epo
             valX1,valY1 = convertRawToXY(val_all.as_matrix(),codingMode=codingMode)
             slength=int(train_pos_s.shape[0]*srate); #update slength
             nclass=int(train_neg_s.shape[0]/slength);
-            
+
   if(maxneg is not None):
-       nclass=min(maxneg,nclass); #cannot do more than maxneg times
-  
+
+       nclass=min(maxneg, nclass); #cannot do more than maxneg times
+
   #modelweights=None;
   for I in range(nb_epoch1):
-    train_neg_s=train_neg_s.sample(train_neg_s.shape[0]); #shuffle neg sample
+    train_neg_s=train_neg_s.sample(train_neg_s.shape[0]) #shuffle neg sample
+
     train_pos_ss=train_pos_s.sample(slength)
     for t in range(nclass):
         train_neg_ss=train_neg_s[(slength*t):(slength*t+slength)];
@@ -70,7 +72,9 @@ def bootStrapping_allneg_continue_keras2(trainfile,valfile=None,srate=0.8,nb_epo
         
         print("modelweights assigned for "+str(I)+" and "+str(t)+"\n");
         if(outputweights is not None):
-            models.save_weights(outputweights,overwrite=True)
-  
-  
+            models.save_weights(outputweights+ '_iteration'+str(t),
+                                overwrite=True)
+
+
+
   return models,eval_model,manipulate_model,weight_c_model,fitHistory

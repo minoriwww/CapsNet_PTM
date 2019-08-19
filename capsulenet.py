@@ -1,3 +1,4 @@
+
 import numpy as np
 from keras import layers,optimizers
 from keras.models import *
@@ -15,7 +16,7 @@ from keras.layers.normalization import BatchNormalization
 class LearningRate(callbacks.Callback):
     def on_train_begin(self, logs={}):
         self.learningrate = 0
-    
+
     def on_epoch_end(self, epoch, logs={}):
         optimizer = self.model.optimizer
         lr = K.eval(optimizer.lr * (1. / (1. + optimizer.decay * optimizer.iterations)))
@@ -26,10 +27,10 @@ class Extract_outputs(Layer):
         #self.input_spec = [InputSpec(ndim='3+')]
         self.outputdim=outputdim
         super(Extract_outputs, self).__init__(**kwargs)
-    
+
     def compute_output_shape(self, input_shape):
         return tuple([None,input_shape[1], self.outputdim])
-    
+
     def call(self, x, mask=None):
         x=x[:,:,:self.outputdim]
         #return K.batch_flatten(x)
@@ -40,10 +41,10 @@ class Extract_weight_c(Layer):
         #self.input_spec = [InputSpec(ndim='3+')]
         self.outputdim=outputdim
         super(Extract_weight_c, self).__init__(**kwargs)
-    
+
     def compute_output_shape(self, input_shape):
         return tuple([None,input_shape[1], input_shape[-1]-self.outputdim])
-    
+
     def call(self, x, mask=None):
         x=x[:,:,self.outputdim:]
         #return K.batch_flatten(x)
@@ -78,14 +79,14 @@ def CapsNet_nogradientstop(input_shape, n_class, routings): # best testing resul
     y = layers.Input(shape=(n_class,))
     masked_by_y = Mask()([digitcaps, y])  # The true label is used to mask the output of capsule layer. For training
     masked = Mask()(digitcaps)  # Mask using the capsule with maximal length. For prediction
-    
+
     # Shared Decoder model in training and prediction
     decoder = Sequential(name='decoder')
     decoder.add(layers.Dense(512, activation='relu', input_dim=dim_capsule_dim2*n_class))
     decoder.add(layers.Dense(1024, activation='relu'))
     decoder.add(layers.Dense(np.prod(input_shape), activation='sigmoid'))
     decoder.add(layers.Reshape(target_shape=input_shape, name='out_recon'))
-    
+
     # Models for training and evaluation (prediction)
     train_model = Model([x, y], [out_caps, decoder(masked_by_y)])
     eval_model = Model(x, [out_caps, decoder(masked)])
@@ -118,14 +119,14 @@ def CapsNet_nogradientstop_crossentropy(input_shape, n_class, routings): # best 
     y = layers.Input(shape=(n_class,))
     masked_by_y = Mask()([digitcaps, y])  # The true label is used to mask the output of capsule layer. For training
     masked = Mask()(digitcaps)  # Mask using the capsule with maximal length. For prediction
-    
+
     # Shared Decoder model in training and prediction
     decoder = Sequential(name='decoder')
     decoder.add(layers.Dense(512, activation='relu', input_dim=dim_capsule_dim2*n_class))
     decoder.add(layers.Dense(1024, activation='relu'))
     decoder.add(layers.Dense(np.prod(input_shape), activation='sigmoid'))
     decoder.add(layers.Reshape(target_shape=input_shape, name='out_recon'))
-    
+
     # Models for training and evaluation (prediction)
     train_model = Model([x, y], [out_caps, decoder(masked_by_y)])
     eval_model = Model(x, [out_caps, decoder(masked)])
@@ -146,7 +147,7 @@ def margin_loss(y_true, y_pred):
     """
     L = y_true * K.square(K.maximum(0., 0.9 - y_pred)) + \
         0.5 * (1 - y_true) * K.square(K.maximum(0., y_pred - 0.1))
-    
+
     return K.mean(K.sum(L, 1))
 
 def speard_loss(m):
@@ -160,26 +161,26 @@ def Capsnet_main(trainX,trainY,valX=None,valY=None,nb_classes=2,nb_epoch=500,ear
     print(trainX.shape)
     if len(trainX.shape)>3:
           trainX.shape=(trainX.shape[0],trainX.shape[2],trainX.shape[3])
-    
+
     if(valX is not None):
        print(valX.shape)
        if len(valX.shape)>3:
           valX.shape=(valX.shape[0],valX.shape[2],valX.shape[3])
-    
+
     if(earlystop is not None):#use early_stop to control nb_epoch there must contain a validation if not provided will select one
           early_stopping = EarlyStopping(monitor='val_capsnet_loss', patience=earlystop)
           nb_epoch=10000
-    
+
     lr_decay = callbacks.LearningRateScheduler(schedule=lambda epoch: lr * (lrdecay ** epoch))
     if compiletimes==0:
         model, eval_model, manipulate_model,weight_c_model = CapsNet(input_shape=trainX.shape[1:],n_class=nb_classes,routings=routings,modeltype=modeltype)
-        
+
         if "crossentropy" in modeltype:
             model.compile(optimizer=optimizers.Adam(lr=lr,epsilon=1e-08),loss=['binary_crossentropy', 'mse'],loss_weights=[1., lam_recon],metrics={'capsnet': 'accuracy'})
         else:
             model.compile(optimizer=optimizers.Adam(lr=lr,epsilon=1e-08),loss=[margin_loss, 'mse'],loss_weights=[1., lam_recon],metrics={'capsnet': 'accuracy'})
-    
-    else: 
+
+    else:
         model=compilemodels[0]
         eval_model=compilemodels[1]
         manipulate_model=compilemodels[2]
@@ -188,7 +189,7 @@ def Capsnet_main(trainX,trainY,valX=None,valY=None,nb_classes=2,nb_epoch=500,ear
         if(weights is not None and compiletimes==0):
              print("load weights:"+weights);
              model.load_weights(weights)
-        
+
         if valX is not None:
             if(earlystop is None):
                  history=model.fit([trainX, trainY], [trainY, trainX], batch_size=batch_size, epochs=nb_epoch,validation_data=[[valX, valY], [valY, valX]],class_weight=class_weight,callbacks=[lr_decay])
@@ -196,8 +197,8 @@ def Capsnet_main(trainX,trainY,valX=None,valY=None,nb_classes=2,nb_epoch=500,ear
                  history=model.fit([trainX, trainY], [trainY, trainX], batch_size=batch_size, epochs=nb_epoch,validation_data=[[valX, valY], [valY, valX]],callbacks=[early_stopping,lr_decay],class_weight=class_weight)
         else:
             history=model.fit([trainX, trainY], [trainY, trainX], batch_size=batch_size, epochs=nb_epoch,class_weight=class_weight,callbacks=[lr_decay])
-        
+
         return model,eval_model,manipulate_model,weight_c_model,history
-    
+
     return model,eval_model
 
